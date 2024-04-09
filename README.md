@@ -25,4 +25,4 @@
    
 5. Running the Application
    ```bash
-   uvicorn main:app --reload
+   python main.py
