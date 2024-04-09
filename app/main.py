@@ -1,22 +1,14 @@
 from fastapi import FastAPI
 from app.core.config import settings
+from app.routers import healthcheck
+import uvicorn
 
 app = FastAPI()
 
-
-@app.get("/")
-def healthcheck():
-    response_body = {
-        "status_code": 200,
-        "detail": "ok",
-        "result": "working"
-    }
-    return response_body
+app.include_router(healthcheck.router)
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(
         "main:app",
         host=settings.HOST,
