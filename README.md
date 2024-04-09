@@ -25,14 +25,4 @@
    
 5. Running the Application
    ```bash
-   uvicorn main:app --reload
-
-### Launching Your Application within Docker
-
-#### Build Docker Image
-
-   ```bash
-   docker build -t backend_internship .
-   docker run -d -p 5000:5000 --name my-fastapi-container backend_internship
-
-#The application will now be accessible at http://localhost:5000.
+   python main.py

@@ -7,6 +7,7 @@ load_dotenv()
 class Settings(BaseSettings):
     HOST: str
     PORT: int
+    RELOAD: bool
 
     class Config:
         env_file = ".env"
