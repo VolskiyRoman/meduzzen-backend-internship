@@ -1,8 +1,3 @@
-import requests
-
-
-def test_status_code_200():
-    url = "http://localhost:5000/"
-    response = requests.get(url)
+def test_status_code_200(client):
+    response = client.get("/")
     assert response.status_code == 200
-
