@@ -1,7 +1,5 @@
 # FastAPI Application
 
-This is a FastAPI application that demonstrates basic usage and setup.
-
 ## Getting Started
 
 ### Installation

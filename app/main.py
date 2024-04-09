@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from core.config import settings
 
 app = FastAPI()
 
@@ -11,3 +12,8 @@ def read_root():
         "result": "working"
     }
     return response_body
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host=settings.HOST, port=settings.PORT)
