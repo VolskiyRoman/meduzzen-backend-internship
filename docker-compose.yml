@@ -1,0 +1,48 @@
+version: '3.7'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      HOST: ${HOST}
+      PORT: ${PORT}
+      RELOAD: ${RELOAD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - .:/code
+    depends_on:
+      - postgres
+      - redis
+    network_mode: bridge
+
+  postgres:
+    image: postgres:14.0-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    restart: always
+    ports:
+      - 5432:${DB_PORT}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    network_mode: bridge
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:${REDIS_PORT}
+    network_mode: bridge
+
+volumes:
+  postgres_data:
