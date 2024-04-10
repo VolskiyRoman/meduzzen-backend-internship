@@ -3,7 +3,7 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/healthcheck")
+@router.get("/")
 def healthcheck():
     response_body = {
         "status_code": 200,
