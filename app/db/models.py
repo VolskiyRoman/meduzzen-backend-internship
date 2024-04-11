@@ -1,8 +1,7 @@
-from sqlalchemy import MetaData, Integer, Column, String
+from sqlalchemy import Column, String, Integer
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
-from app.db.connection import Base
-
-metadata = MetaData()
+Base: DeclarativeMeta = declarative_base()
 
 
 class User(Base):
