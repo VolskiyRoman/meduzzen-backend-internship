@@ -10,7 +10,7 @@ class UserSchema(BaseModel):
     username: str
     email: EmailStr
     password: str
-    is_admin: int
+    is_admin: bool
 
     class Config:
         orm_mode = True

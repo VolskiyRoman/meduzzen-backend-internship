@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, Boolean
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 Base: DeclarativeMeta = declarative_base()
@@ -10,5 +10,5 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(50), unique=True, nullable=False)
     password = Column(String(50), nullable=False)
-    is_admin = Column(Integer, nullable=False, default=False)
+    is_admin = Column(Boolean, nullable=False, default=False)
 
