@@ -2,18 +2,19 @@ from typing import List
 
 from pydantic import BaseModel, EmailStr
 
-from app.db.models import User
 
-
-class UserSchema(BaseModel):
+class BaseUserSchema(BaseModel):
     id: int
     username: str
     email: EmailStr
-    password: str
-    is_admin: bool
 
     class Config:
         orm_mode = True
+
+
+class UserSchema(BaseUserSchema):
+    password: str
+    is_admin: bool
 
 
 class SignUpRequest(BaseModel):
@@ -33,7 +34,7 @@ class UserUpdateRequest(BaseModel):
 
 
 class UsersListResponse(BaseModel):
-    users: List[User]
+    users: List[BaseUserSchema]
 
     class Config:
         schema_extra = {
@@ -46,10 +47,7 @@ class UsersListResponse(BaseModel):
         }
 
 
-class UserDetailResponse(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
+class UserDetailResponse(BaseUserSchema):
     is_admin: bool
 
     class Config:
