@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, DateTime, String, Boolean
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+Base: DeclarativeMeta = declarative_base()
 
 
 class BaseModel(Base):

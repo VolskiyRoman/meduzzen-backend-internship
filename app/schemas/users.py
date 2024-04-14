@@ -10,6 +10,7 @@ class BaseUserSchema(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class UserSchema(BaseUserSchema):
