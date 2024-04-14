@@ -4,7 +4,8 @@ from fastapi import HTTPException, status
 
 
 class UserService:
-    async def create_one(self, data: dict):
+    @staticmethod
+    async def create_one(data: dict):
         async with async_session_maker() as session:
             email = data.get("email")
             existing_user_email = await user_repository.get_one(session=session, email=email)

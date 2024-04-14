@@ -40,11 +40,11 @@ class BaseRepository:
             result = await session.execute(query)
             return await result.scalars().all()
 
-    async def update_one(self, model_uuid: str, data: dict) -> Base:
+    async def update_one(self, model_id: str, data: dict) -> Base:
         async with get_async_session() as session:
             query = (
                 update(self.model)
-                .where(self.model.uuid == model_uuid)
+                .where(self.model.id == model_id)
                 .values(**data)
                 .returning(self.model)
             )
@@ -54,11 +54,11 @@ class BaseRepository:
             await session.commit()
             return updated_row
 
-    async def delete_one(self, model_uuid: str) -> Base:
+    async def delete_one(self, model_id: str) -> Base:
         async with get_async_session() as session:
             query = (
                 delete(self.model)
-                .where(self.model.uuid == model_uuid)
+                .where(self.model.id == model_id)
                 .returning(self.model)
             )
             result = await session.execute(query)
