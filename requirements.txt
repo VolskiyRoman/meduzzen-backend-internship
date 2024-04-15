@@ -10,3 +10,8 @@ asyncpg==0.29.0
 SQLAlchemy==2.0.29
 aioredis==2.0.1
 pytest-asyncio==0.23.6
+alembic==1.13.1
+asyncpg==0.29.0
+loguru~=0.7.2
+pydantic~=2.6.4
+starlette~=0.37.2
