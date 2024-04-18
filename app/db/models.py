@@ -18,5 +18,5 @@ class User(BaseModel):
 
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(50), unique=True, nullable=False)
-    password = Column(String(50), nullable=False)
+    password = Column(String(100), nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)

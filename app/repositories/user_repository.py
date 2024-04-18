@@ -1,11 +1,7 @@
-from app.db.models import User
 from app.repositories.base_repository import BaseRepository
-from app.db.connection import async_session_maker
+from app.db.models import User
 
 
 class UserRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(User)
-
-
-user_repository = UserRepository()
+    def __init__(self, session):
+        super().__init__(session=session, model=User)

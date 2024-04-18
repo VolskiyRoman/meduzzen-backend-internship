@@ -31,7 +31,6 @@ class SignInRequest(BaseModel):
 
 class UserUpdateRequest(BaseModel):
     username: str
-    email: EmailStr
 
 
 class UsersListResponse(BaseModel):
