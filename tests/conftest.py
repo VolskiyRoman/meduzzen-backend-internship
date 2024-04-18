@@ -1,9 +1,7 @@
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from starlette.testclient import TestClient
+from typing import Generator
 
-from app.db.models import Base
+import pytest
+from starlette.testclient import TestClient
 from app.main import app
 
 
@@ -12,14 +10,9 @@ def client():
     return TestClient(app)
 
 
-@pytest.fixture(scope="module")
-def db():
-    engine = create_engine('sqlite:///:memory:')
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@pytest.fixture(scope="session")
+def test_client() -> Generator[TestClient, None, None]:
+    """creating test client"""
+    with TestClient(app) as test_app_client:
+        yield test_app_client
 
