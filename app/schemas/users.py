@@ -10,6 +10,7 @@ class BaseUserSchema(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class UserSchema(BaseUserSchema):
@@ -30,7 +31,6 @@ class SignInRequest(BaseModel):
 
 class UserUpdateRequest(BaseModel):
     username: str
-    email: EmailStr
 
 
 class UsersListResponse(BaseModel):
