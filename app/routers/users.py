@@ -32,7 +32,7 @@ async def get_user_by_id(user_id: int, user_service: UserService = Depends(get_u
     return user
 
 
-@router.put("/{user_id}", response_model=UserSchema)
+@router.patch("/{user_id}", response_model=UserSchema)
 async def update_user(
     user_id: int,
     update_data: UserUpdateRequest,

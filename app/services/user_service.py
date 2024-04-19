@@ -54,7 +54,7 @@ class UserService:
 
     async def get_users(self, skip: int = 1, limit: int = 10) -> List[UserSchema]:
         users = await self.repository.get_many(skip=skip, limit=limit)
-        return [UserSchema.from_orm(user) for user in users]
+        return users
 
     async def get_user_by_id(self, user_id: int) -> Optional[UserSchema]:
         return await self._get_user_or_raise(user_id)
