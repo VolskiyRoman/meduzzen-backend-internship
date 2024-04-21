@@ -18,3 +18,5 @@ starlette~=0.37.2
 email_validator==2.1.1
 bcrypt==4.1.2
 aiosqlite==0.20.0
+PyJWT==2.8.0
+cryptography==42.0.5
