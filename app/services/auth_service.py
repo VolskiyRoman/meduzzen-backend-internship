@@ -1,5 +1,8 @@
 from datetime import datetime
 from http.client import HTTPException
+from random import choices
+from string import ascii_lowercase, digits
+
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status, Depends
@@ -7,7 +10,6 @@ from fastapi import HTTPException, status, Depends
 from app.db.connection import get_async_session
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenInfo
-from app.schemas.users import UserSchema
 from app.utils import auth as auth_utils
 
 security = HTTPBearer()
@@ -37,7 +39,7 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Incorrect password",
             )
-        token = await auth_utils.encode_jwt(payload={"email": email})
+        token = await auth_utils.encode_jwt(payload={"email": email, "from": "noauth0"})
         token_info = TokenInfo(access_token=token, token_type="Bearer")
         return token_info
 
@@ -68,15 +70,10 @@ class AuthService:
             "is_admin": data.get("is_admin", False),
         }
 
-        user = await self.repository.create_one(user_data)
+        await self.repository.create_one(user_data)
 
         token = await auth_utils.encode_jwt(payload={"email": email})
         token_info = TokenInfo(access_token=token, token_type="Bearer")
-
-        user_info = {
-            "user": UserSchema.from_orm(user),
-            "token_info": token_info,
-        }
 
         return token_info
 
@@ -84,6 +81,12 @@ class AuthService:
     async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security),
                                session: AsyncSession = Depends(get_async_session)) -> str:
         decoded_token = auth_utils.decode_jwt(token.credentials)
+        if not decoded_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Token invalid",
+            )
+
         current_time = datetime.utcnow()
         expiration_time = datetime.utcfromtimestamp(decoded_token["exp"])
         if current_time >= expiration_time:
@@ -91,12 +94,27 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has expired",
             )
+
         user_email = decoded_token.get("email")
         user_repository = UserRepository(session=session)
         current_user = await user_repository.get_one(email=user_email)
+
+        if not current_user:
+            username_prefix = "auth0_user_"
+            random_suffix = ''.join(choices(ascii_lowercase + digits, k=6))
+            username = username_prefix + random_suffix
+            password = user_email.split('@')[0]
+
+            hashed_password = auth_utils.hash_password(password=password)
+
+            user_data = {
+                "email": user_email,
+                "username": username,
+                "password": hashed_password.decode("utf-8"),
+                "is_admin": decoded_token.get("is_admin", False),
+            }
+
+            await user_repository.create_one(user_data)
+            current_user = username
+
         return current_user
-
-
-
-
-
