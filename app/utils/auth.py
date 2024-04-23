@@ -10,7 +10,7 @@ async def encode_jwt(
     payload: dict,
     client_secret: str = settings.AUTH0_SECRET,
     algorithm: str = settings.AUTH0_ALGORITHMS,
-    expire_minutes: int = 15,
+    expire_minutes: int = settings.TOKEN_EXPIRATION,
     expire_timedelta: timedelta | None = None,
 ) -> str:
     to_encode = payload.copy()

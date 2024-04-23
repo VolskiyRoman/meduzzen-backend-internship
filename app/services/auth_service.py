@@ -7,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status, Depends
 
+from app.core.config import settings
 from app.db.connection import get_async_session
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenInfo
@@ -100,12 +101,12 @@ class AuthService:
         current_user = await user_repository.get_one(email=user_email)
 
         if not current_user:
-            username_prefix = "auth0_user_"
+            username_prefix = settings.AUTH0_USERNAME_PREFIX
             random_suffix = ''.join(choices(ascii_lowercase + digits, k=6))
             username = username_prefix + random_suffix
-            password = user_email.split('@')[0]
+            password = str(datetime.now())
 
-            hashed_password = auth_utils.hash_password(password=password)
+            hashed_password = auth_utils.hash_password(password)
 
             user_data = {
                 "email": user_email,
