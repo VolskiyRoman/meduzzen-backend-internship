@@ -22,36 +22,6 @@ class UserService:
             )
         return UserSchema.from_orm(user)
 
-    async def create_user(self, data: dict) -> UserSchema:
-        email = data.get("email")
-        existing_user_email = await self.repository.get_one(email=email)
-        if existing_user_email:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User with this email already exists",
-            )
-
-        username = data.get("username")
-        existing_user_username = await self.repository.get_one(username=username)
-        if existing_user_username:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User with this username already exists",
-            )
-
-        password = data.get("password")
-        hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-
-        user_data = {
-            "email": email,
-            "username": username,
-            "password": hashed_password.decode("utf-8"),
-            "is_admin": data.get("is_admin", False),
-        }
-
-        user = await self.repository.create_one(user_data)
-        return UserSchema.from_orm(user)
-
     async def get_users(self, skip: int = 1, limit: int = 10) -> List[UserSchema]:
         users = await self.repository.get_many(skip=skip, limit=limit)
         return users

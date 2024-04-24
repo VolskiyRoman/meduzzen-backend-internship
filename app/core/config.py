@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -17,6 +19,14 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str
     REDIS_PORT: int
+
+    TOKEN_EXPIRATION: int
+
+    AUTH0_SECRET: str
+    AUTH0_DOMAIN: str
+    AUTH0_API_AUDIENCE: str
+    AUTH0_ALGORITHMS: str
+    AUTH0_USERNAME_PREFIX: str
 
     class Config:
         env_file = ".env"
