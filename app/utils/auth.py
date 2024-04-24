@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
+from http.client import HTTPException
 
 import bcrypt
 import jwt
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials
+from starlette import status
 
 from app.core.config import settings
 
