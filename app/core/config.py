@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -27,6 +25,7 @@ class Settings(BaseSettings):
     AUTH0_API_AUDIENCE: str
     AUTH0_ALGORITHMS: str
     AUTH0_USERNAME_PREFIX: str
+    AUTH0_TOKEN_PREFIX: str
 
     class Config:
         env_file = ".env"

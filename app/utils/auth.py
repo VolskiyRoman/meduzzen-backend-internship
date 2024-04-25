@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
-from http.client import HTTPException
+from fastapi import HTTPException
 
 import bcrypt
 import jwt
 from fastapi import Depends
-from fastapi.security import HTTPAuthorizationCredentials
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.core.config import settings
+from app.db.connection import get_async_session
+from app.repositories.base_repository import BaseRepository
 
 
 async def encode_jwt(
