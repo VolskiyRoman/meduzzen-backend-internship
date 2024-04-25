@@ -42,7 +42,7 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Incorrect password",
             )
-        token = await auth_utils.encode_jwt(payload={"email": email, "from": "noauth0",
+        token = await auth_utils.encode_jwt(payload={"email": email, "from": settings.AUTH0_TOKEN_PREFIX,
                                                      "aud": settings.AUTH0_API_AUDIENCE})
         token_info = TokenInfo(access_token=token, token_type="Bearer")
         return token_info
@@ -99,24 +99,27 @@ class AuthService:
         return decoded_token
 
     @staticmethod
+    def generate_random_password():
+        current_time = datetime.now().strftime("%Y%m%d%H%M%S")
+        random_string = secrets.token_hex(4)
+        password = current_time + random_string
+        return password
+
+    @staticmethod
     async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security),
                                session: AsyncSession = Depends(get_async_session)) -> str:
         decoded_token = await AuthService.token_validator(token.credentials)
-
         user_email = decoded_token.get("email")
+
         user_repository = UserRepository(session=session)
         current_user = await user_repository.get_one(email=user_email)
 
         if not current_user:
             username_prefix = settings.AUTH0_USERNAME_PREFIX
-            random_suffix = ''.join(choices(ascii_lowercase + digits, k=6))
-            username = username_prefix + random_suffix
+            username_suffix = ''.join(choices(ascii_lowercase + digits, k=6))
+            username = username_prefix + username_suffix
 
-            current_time = datetime.now().strftime("%Y%m%d%H%M%S")
-            random_string = secrets.token_hex(4)
-
-            password = current_time + random_string
-
+            password = AuthService.generate_random_password()
             hashed_password = auth_utils.hash_password(password)
 
             user_data = {
