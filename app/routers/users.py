@@ -3,10 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.connection import get_async_session
 from app.repositories.user_repository import UserRepository
-from app.schemas.users import UserSchema, SignUpRequest, UsersListResponse, UserUpdateRequest, BaseUserSchema
+from app.schemas.users import UserSchema, UsersListResponse, UserUpdateRequest, BaseUserSchema
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
-import app.utils.auth as auth_utils
 
 router = APIRouter(tags=["Users"])
 

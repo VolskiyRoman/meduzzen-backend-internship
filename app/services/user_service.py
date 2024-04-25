@@ -1,15 +1,12 @@
 from typing import List, Optional
 
-import bcrypt
 import sqlalchemy
-from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
 from app.schemas.users import UserSchema, UserUpdateRequest, BaseUserSchema
 import app.utils.auth as auth_utils
-from app.services.auth_service import security
 
 
 class UserService:
