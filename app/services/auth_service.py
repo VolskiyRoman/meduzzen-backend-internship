@@ -2,8 +2,10 @@ from datetime import datetime
 from http.client import HTTPException
 from random import choices
 from string import ascii_lowercase, digits
+import secrets
 
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import ExpiredSignatureError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status, Depends
 
@@ -40,7 +42,8 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Incorrect password",
             )
-        token = await auth_utils.encode_jwt(payload={"email": email, "from": "noauth0"})
+        token = await auth_utils.encode_jwt(payload={"email": email, "from": settings.AUTH0_TOKEN_PREFIX,
+                                                     "aud": settings.AUTH0_API_AUDIENCE})
         token_info = TokenInfo(access_token=token, token_type="Bearer")
         return token_info
 
@@ -79,33 +82,44 @@ class AuthService:
         return token_info
 
     @staticmethod
-    async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security),
-                               session: AsyncSession = Depends(get_async_session)) -> str:
-        decoded_token = auth_utils.decode_jwt(token.credentials)
-        if not decoded_token:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Token invalid",
-            )
-
-        current_time = datetime.utcnow()
-        expiration_time = datetime.utcfromtimestamp(decoded_token["exp"])
-        if current_time >= expiration_time:
+    async def token_validator(token: str) -> dict:
+        try:
+            decoded_token = auth_utils.decode_jwt(token)
+        except ExpiredSignatureError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has expired",
             )
 
+        if not decoded_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Token invalid",
+            )
+        return decoded_token
+
+    @staticmethod
+    def generate_random_password():
+        current_time = datetime.now().strftime("%Y%m%d%H%M%S")
+        random_string = secrets.token_hex(4)
+        password = current_time + random_string
+        return password
+
+    @staticmethod
+    async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security),
+                               session: AsyncSession = Depends(get_async_session)) -> str:
+        decoded_token = await AuthService.token_validator(token.credentials)
         user_email = decoded_token.get("email")
+
         user_repository = UserRepository(session=session)
         current_user = await user_repository.get_one(email=user_email)
 
         if not current_user:
             username_prefix = settings.AUTH0_USERNAME_PREFIX
-            random_suffix = ''.join(choices(ascii_lowercase + digits, k=6))
-            username = username_prefix + random_suffix
-            password = str(datetime.now())
+            username_suffix = ''.join(choices(ascii_lowercase + digits, k=6))
+            username = username_prefix + username_suffix
 
+            password = AuthService.generate_random_password()
             hashed_password = auth_utils.hash_password(password)
 
             user_data = {

@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 
 
 class BaseUserSchema(BaseModel):
@@ -30,7 +30,8 @@ class SignInRequest(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    username: str
+    username: str = None
+    password: str = None
 
 
 class UsersListResponse(BaseModel):
