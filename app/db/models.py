@@ -1,7 +1,11 @@
+from sqlalchemy import Enum
+
 from sqlalchemy import Column, Integer, DateTime, String, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
+from app.enums.invite import InvitationStatus
 
 Base: DeclarativeMeta = declarative_base()
 
@@ -22,8 +26,6 @@ class User(BaseModel):
     password = Column(String(100), nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)
 
-    companies_owned = relationship('Company', back_populates='owner')
-
 
 class Company(BaseModel):
     __tablename__ = 'companies'
@@ -34,3 +36,12 @@ class Company(BaseModel):
     name = Column(String(255), nullable=False)
     description = Column(String(1000), nullable=False)
     visible = Column(Boolean, default=True)
+
+
+class Invitation(BaseModel):
+    __tablename__ = 'invitations'
+
+    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_company = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    status = Column(Enum(InvitationStatus), nullable=False)
+
