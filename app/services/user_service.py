@@ -1,5 +1,4 @@
 from typing import List, Optional
-import sqlalchemy
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
