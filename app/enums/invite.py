@@ -1,9 +1,8 @@
 from enum import Enum
 
 
-class InvitationStatus(Enum):
+class InvitationStatus(str, Enum):
     INVITED = 'invited'
     REQUESTED = 'requested'
     ACCEPTED = 'accepted'
-    DECLINED = 'declined'
     PROMOTED = 'promoted'

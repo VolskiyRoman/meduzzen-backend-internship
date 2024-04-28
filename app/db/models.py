@@ -25,6 +25,7 @@ class User(BaseModel):
     email = Column(String(50), unique=True, nullable=False)
     password = Column(String(100), nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)
+    companies_owned = relationship('Company', back_populates='owner')
 
 
 class Company(BaseModel):
@@ -38,10 +39,9 @@ class Company(BaseModel):
     visible = Column(Boolean, default=True)
 
 
-class Invitation(BaseModel):
-    __tablename__ = 'invitations'
+class Action(BaseModel):
+    __tablename__ = 'actions'
 
-    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
-    id_company = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
     status = Column(Enum(InvitationStatus), nullable=False)
-
