@@ -1,4 +1,3 @@
-import functools
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,21 +26,10 @@ class CompanyService:
             )
         return company
 
-    def require_company_owner(self, func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            user_id = kwargs.get('user_id')
-            company_id = kwargs.get('company_id')
-            company = await self._get_company_or_raise(company_id)
-            if user_id != company.owner_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You are not authorized to edit this company",
-                )
-
-            return await func(*args, **kwargs)
-
-        return wrapper
+    async def validate_company(self, current_user_id: int, company_id: int) -> CompanySchema:
+        company = await self._get_company_or_raise(company_id)
+        await companies_utils.check_company_owner(current_user_id, company.owner_id)
+        return company
 
     async def create_company(self, data: dict, current_user_id: int) -> CompanySchema:
         data["owner_id"] = current_user_id
@@ -53,13 +41,11 @@ class CompanyService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Company name is required",
             )
-        company = await self._get_company_or_raise(company_id)
-        await companies_utils.check_company_owner(current_user_id, company.owner_id)
+        await self.validate_company(current_user_id, company_id)
         return await self.repository.update_one(company_id, data)
 
     async def delete_company(self, company_id: int, current_user_id: int) -> CompanySchema:
-        company = await self._get_company_or_raise(company_id)
-        await companies_utils.check_company_owner(current_user_id, company.owner_id)
+        await self.validate_company(current_user_id, company_id)
         return await self.repository.delete_one(company_id)
 
     async def get_company_by_id(self, company_id: int, user_id: int) -> Optional[CompanySchema]:
@@ -77,3 +63,4 @@ class CompanyService:
                                                visible=self._is_visible_to_user(company, user_id)) for company in
                              companies]
         return CompaniesListResponse(companies=visible_companies)
+

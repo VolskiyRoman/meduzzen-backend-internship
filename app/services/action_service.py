@@ -162,9 +162,7 @@ class ActionService:
         return await self.action_repository.delete_one(action.id)
 
     async def kick_from_company(self, action_id: int, current_user_id: int) -> ActionSchema:
-        action = await self._get_action_or_raise(action_id)
-        company = await self._get_company_or_raise(action.company_id)
-        await companies_utils.check_company_owner(current_user_id, company.owner_id)
+        action = await self._validate_request(action_id, current_user_id)
         return await self.action_repository.delete_one(action.id)
 
     async def _validate_company_get(self, current_user_id: int, company_id: Optional[int] = None) -> CompanySchema:
@@ -210,3 +208,5 @@ class ActionService:
                                                              InvitationStatus.INVITED,
                                                              is_company=False)
         return invites
+
+
