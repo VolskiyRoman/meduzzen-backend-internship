@@ -46,8 +46,8 @@ class ActionService:
             )
         return user
 
-    async def _get_action_or_raise(self, invite_id: int) -> ActionSchema:
-        action = await self.action_repository.get_one(id=invite_id)
+    async def _get_action_or_raise(self, action_id: int) -> ActionSchema:
+        action = await self.action_repository.get_one(id=action_id)
         if not action:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -209,4 +209,35 @@ class ActionService:
                                                              is_company=False)
         return invites
 
+    async def _validate_admin(self,
+                              current_user_id: int,
+                              company_id: int,
+                              user_id: int,
+                              validate_status: InvitationStatus) -> ActionSchema:
+        company = await self._validate_company_get(current_user_id, company_id)
+        action = await self.action_repository.get_one(company_id=company.id, user_id=user_id)
+        if not action:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User does not exist",
+            )
+        if action.status != validate_status:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to make this user admin",
+            )
+        return action
 
+    async def add_admin(self, current_user_id: int, company_id: int, user_id: int) -> ActionSchema:
+        action = await self._validate_admin(current_user_id, company_id, user_id, InvitationStatus.ACCEPTED)
+        action.status = InvitationStatus.PROMOTED
+        return await self.action_repository.update_one(action.id, {'status': action.status})
+
+    async def remove_admin(self, current_user_id: int, company_id: int, user_id: int) -> ActionSchema:
+        action = await self._validate_admin(current_user_id, company_id, user_id, InvitationStatus.PROMOTED)
+        action.status = InvitationStatus.ACCEPTED
+        return await self.action_repository.update_one(action.id, {'status': action.status})
+
+    async def get_admins(self, current_user_id: int, company_id: int) -> List[GetActionsResponseSchema]:
+        await self._validate_company_get(current_user_id, company_id)
+        return await self.action_repository.get_relatives(company_id, InvitationStatus.PROMOTED, is_company=True)

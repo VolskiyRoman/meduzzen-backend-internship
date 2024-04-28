@@ -144,7 +144,7 @@ async def get_my_invites(
     return await action_service.get_my_invites(current_user_id)
 
 
-@router.get("company/members", response_model=List[GetActionsResponseSchema])
+@router.get("/company/members", response_model=List[GetActionsResponseSchema])
 async def get_company_members(
         current_user: UserSchema = Depends(AuthService.get_current_user),
         company_id: Optional[int] = Query(None),
@@ -154,3 +154,27 @@ async def get_company_members(
     return await action_service.get_company_members(current_user_id, company_id)
 
 
+@router.patch("/add_admin", response_model=ActionSchema)
+async def add_admin(company_id: int,
+                    user_id: int,
+                    current_user: UserSchema = Depends(AuthService.get_current_user),
+                    action_service: ActionService = Depends(get_action_service)) -> ActionSchema:
+    current_user_id = current_user.id
+    return await action_service.add_admin(current_user_id, company_id, user_id)
+
+
+@router.patch("/remove_admin", response_model=ActionSchema)
+async def remove_admin(company_id: int,
+                       user_id: int,
+                       current_user: UserSchema = Depends(AuthService.get_current_user),
+                       action_service: ActionService = Depends(get_action_service)) -> ActionSchema:
+    current_user_id = current_user.id
+    return await action_service.remove_admin(current_user_id, company_id, user_id)
+
+
+@router.get("/get_admins", response_model=List[GetActionsResponseSchema])
+async def get_admins(company_id: int,
+                     current_user: UserSchema = Depends(AuthService.get_current_user),
+                     action_service: ActionService = Depends(get_action_service)) -> List[GetActionsResponseSchema]:
+    current_user_id = current_user.id
+    return await action_service.get_admins(current_user_id, company_id)
