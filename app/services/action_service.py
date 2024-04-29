@@ -241,3 +241,4 @@ class ActionService:
     async def get_admins(self, current_user_id: int, company_id: int) -> List[GetActionsResponseSchema]:
         await self._validate_company_get(current_user_id, company_id)
         return await self.action_repository.get_relatives(company_id, InvitationStatus.PROMOTED, is_company=True)
+

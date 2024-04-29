@@ -1,6 +1,7 @@
 from sqlalchemy import Enum
 
 from sqlalchemy import Column, Integer, DateTime, String, Boolean, ForeignKey
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -45,3 +46,23 @@ class Action(BaseModel):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
     status = Column(Enum(InvitationStatus), nullable=False)
+
+
+class Quiz(BaseModel):
+    __tablename__ = 'quizzes'
+
+    name = Column(String(255), nullable=False)
+    description = Column(String(1000), nullable=False)
+    frequency_days = Column(Integer, nullable=False)
+
+    questions = relationship('Question', back_populates='quiz', cascade='all, delete-orphan')
+
+
+class Question(BaseModel):
+    __tablename__ = 'questions'
+
+    question_text = Column(String(1000), nullable=False)
+    correct_answer = Column(String(255), nullable=False)
+    options = Column(ARRAY(String), nullable=False)
+    quiz_id = Column(Integer, ForeignKey('quizzes.id'), nullable=False)
+    quiz = relationship('Quiz', back_populates='questions')
