@@ -7,7 +7,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from app.db.connection import DATABASE_URL
-from app.db.models import Base
+from app.models.base import Base
+from app.models.user import User
+from app.models.company import Company
+from app.models.action import CompanyAction
+from app.models.company_member import CompanyMember
+
 
 config = context.config
 section = config.config_ini_section

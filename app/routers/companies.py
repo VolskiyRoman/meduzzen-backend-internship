@@ -33,10 +33,10 @@ async def edit_company(company_id: int,
     return await company_service.edit_company(company_data.model_dump(), current_user_id, company_id)
 
 
-@router.delete("/{company_id}/", response_model=CompanySchema)
+@router.delete("/{company_id}/", response_model=dict)
 async def delete_company(company_id: int,
                          current_user: UserSchema = Depends(AuthService.get_current_user),
-                         company_service: CompanyService = Depends(get_company_service)) -> CompanySchema:
+                         company_service: CompanyService = Depends(get_company_service)) -> dict:
     current_user_id = current_user.id
     return await company_service.delete_company(company_id, current_user_id)
 
