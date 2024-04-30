@@ -80,29 +80,30 @@ class ActionService:
         invite = await self.action_repository.get_one(company_id=company.id,
                                                       user_id=action_data.user_id,)
         if invite:
-            if invite.status == InvitationStatus.INVITED:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="User is already invited",
-                )
-            elif invite.status == InvitationStatus.ACCEPTED:
-                raise AlreadyInCompanyException()
-            elif invite.status == InvitationStatus.REQUESTED:
-                await self._add_user_to_company(invite.id, current_user_id, company.id)
-                return invite
-            elif invite.status == InvitationStatus.DECLINED_BY_USER:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You can't invite this user",
-                )
-            elif invite.status == InvitationStatus.DECLINED_BY_COMPANY:
-                invite.status = InvitationStatus.REQUESTED
-                return invite
-        else:
-            data = action_data.dict()
-            data["status"] = InvitationStatus.INVITED.value
-            data["type"] = InvitationType.INVITE.value
-            return await self.action_repository.create_one(data=data)
+            match invite:
+                case InvitationStatus.ACCEPTED:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="User is already invited",
+                    )
+                case InvitationStatus.ACCEPTED:
+                    raise AlreadyInCompanyException()
+                case InvitationStatus.REQUESTED:
+                    await self._add_user_to_company(invite.id, current_user_id, company.id)
+                    return invite
+                case InvitationStatus.DECLINED_BY_USER:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="You can't invite this user",
+                    )
+                case InvitationStatus.DECLINED_BY_COMPANY:
+                    invite.status = InvitationStatus.REQUESTED
+                    return invite
+                case _:
+                    data = action_data.dict()
+                    data["status"] = InvitationStatus.INVITED.value
+                    data["type"] = InvitationType.INVITE.value
+                    return await self.action_repository.create_one(data=data)
 
     async def cancel_invite(self, action_id: int, current_user_id: int) -> ActionSchema:
         action = await self._get_action_or_raise(action_id)
