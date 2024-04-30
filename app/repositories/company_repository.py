@@ -1,9 +1,8 @@
-from fastapi import HTTPException
 from sqlalchemy import select, delete
-from starlette import status
 
-from app.db.models import Company, CompanyMember
 from app.enums.invite import MemberStatus
+from app.models.company import Company
+from app.models.company_member import CompanyMember
 from app.repositories.base_repository import BaseRepository
 from app.schemas.actions import CompanyMemberSchema
 from app.schemas.companies import CompanySchema

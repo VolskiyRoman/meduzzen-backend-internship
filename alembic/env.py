@@ -10,7 +10,7 @@ from app.db.connection import DATABASE_URL
 from app.models.base import Base
 from app.models.user import User
 from app.models.company import Company
-from app.models.action import Action
+from app.models.action import CompanyAction
 from app.models.company_member import CompanyMember
 
 
