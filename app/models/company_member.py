@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, Enum, UniqueConstraint
+from sqlalchemy import Column, Integer, ForeignKey, Enum
 
 from app.enums.invite import MemberStatus
 from .base import BaseModel
