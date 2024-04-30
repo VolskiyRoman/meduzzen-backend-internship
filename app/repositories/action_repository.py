@@ -6,7 +6,6 @@ from app.models.user import User
 from app.models.action import CompanyAction
 from app.enums.invite import InvitationStatus
 from app.repositories.base_repository import BaseRepository
-from app.schemas.actions import GetActionsResponseSchema
 
 
 class ActionRepository(BaseRepository):

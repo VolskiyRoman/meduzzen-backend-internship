@@ -80,7 +80,7 @@ class ActionService:
         invite = await self.action_repository.get_one(company_id=company.id,
                                                       user_id=action_data.user_id,)
         if invite:
-            match invite:
+            match invite.status:
                 case InvitationStatus.ACCEPTED:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
