@@ -38,7 +38,7 @@ class CompanyRepository(BaseRepository):
             CompanyMember.role == MemberStatus.OWNER
         )
         company_owner = await self.session.execute(query)
-        return company_owner.scalar() is not None
+        return company_owner.scalar()
 
     async def delete_company(self, company_id: int) -> None:
         await self._delete_company_members(company_id)

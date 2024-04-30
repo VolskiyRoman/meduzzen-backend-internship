@@ -13,20 +13,10 @@ class ActionRepository(BaseRepository):
     def __init__(self, session):
         super().__init__(session=session, model=CompanyAction)
 
-    async def get_relatives(self,
-                            id_: int,
-                            status: InvitationStatus,
-                            is_company: bool) -> List[GetActionsResponseSchema]:
+    @staticmethod
+    async def get_relatives_query(id_: int, status: InvitationStatus, is_company: bool):
         id_column = CompanyAction.company_id if is_company else CompanyAction.user_id
-
-        query = (
-            select(CompanyAction, User)
-            .join(User, CompanyAction.user_id == User.id)
-            .filter(id_column == id_, CompanyAction.status == status)
+        query = select(CompanyAction, User).join(User, CompanyAction.user_id == User.id).filter(
+            id_column == id_, CompanyAction.status == status
         )
-        result = await self.session.execute(query)
-        actions = [
-            GetActionsResponseSchema(id=action.id, user_id=user.id, user_username=user.username)
-            for action, user in result.fetchall()
-        ]
-        return actions
+        return query

@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 from app.repositories.company_repository import CompanyRepository
 from app.schemas.companies import CompaniesListResponse, CompanySchema
 from app.utils import companies as companies_utils
+from app.utils.companies import NotOwnerException
 
 
 class CompanyService:
@@ -29,7 +30,7 @@ class CompanyService:
     async def validate_company(self, current_user_id: int, company_id: int) -> CompanySchema:
         company = await self._get_company_or_raise(company_id)
         if not await self.repository.is_user_company_owner(current_user_id, company_id):
-            companies_utils.not_owner()
+            raise NotOwnerException()
         return company
 
     async def create_company(self, data: dict, current_user_id: int) -> CompanySchema:

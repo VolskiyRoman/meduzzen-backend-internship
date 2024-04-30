@@ -37,15 +37,17 @@ def check_requested(action_status: InvitationStatus) -> None:
         )
 
 
-def raise_already_in_company_exception():
-    raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail="User is already in company",
-    )
+class AlreadyInCompanyException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already in company"
+        )
 
 
-def not_owner():
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Uou are not the owner of this company",
-    )
+class NotOwnerException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not the owner of this company"
+        )

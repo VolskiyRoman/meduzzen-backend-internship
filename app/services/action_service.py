@@ -13,7 +13,7 @@ from app.schemas.actions import ActionSchema, InviteCreateSchema, RequestCreateS
 from app.schemas.companies import CompanySchema
 from app.schemas.users import UserSchema
 from app.utils import companies as companies_utils
-from app.utils.companies import raise_already_in_company_exception
+from app.utils.companies import AlreadyInCompanyException, NotOwnerException
 
 
 class ActionService:
@@ -86,7 +86,7 @@ class ActionService:
                     detail="User is already invited",
                 )
             elif invite.status == InvitationStatus.ACCEPTED:
-                raise_already_in_company_exception()
+                raise AlreadyInCompanyException()
             elif invite.status == InvitationStatus.REQUESTED:
                 await self._add_user_to_company(invite.id, current_user_id, company.id)
                 return invite
@@ -108,7 +108,7 @@ class ActionService:
         action = await self._get_action_or_raise(action_id)
         company = await self._get_company_or_raise(action.company_id)
         if not self.company_repository.is_user_company_owner(current_user_id, company.id):
-            companies_utils.not_owner()
+            raise NotOwnerException()
         await self.action_repository.delete_one(action_id)
         return action
 
@@ -135,7 +135,7 @@ class ActionService:
         company = await self._get_company_or_raise(action_data.company_id)
         request = await self.action_repository.get_one(company_id=company.id, user_id=current_user_id)
         if await self.company_repository.is_user_company_owner(current_user_id, company.id):
-            raise_already_in_company_exception()
+            raise AlreadyInCompanyException()
         if request:
             if request.status == InvitationStatus.REQUESTED:
                 raise HTTPException(
@@ -143,7 +143,7 @@ class ActionService:
                     detail="You have already sent a request to this company",
                 )
             elif request.status == InvitationStatus.ACCEPTED:
-                await raise_already_in_company_exception()
+                raise AlreadyInCompanyException()
             elif request.status == InvitationStatus.INVITED:
                 await self._add_user_to_company(request.id, current_user_id, company.id)
                 request.status = InvitationStatus.ACCEPTED
@@ -216,43 +216,58 @@ class ActionService:
         await self.company_repository.is_user_company_owner(current_user_id, company.id)
         return company
 
+    async def _process_query_results(self, results):
+        actions = []
+        for action, user in results.fetchall():
+            action_dto = GetActionsResponseSchema(id=action.id, user_id=user.id, user_username=user.username)
+            actions.append(action_dto)
+        return actions
+
     async def get_company_invites(self,
                                   current_user_id: int,
                                   company_id: Optional[int] = None) -> List[GetActionsResponseSchema]:
         await self._validate_company_get(current_user_id, company_id)
-        invites = await self.action_repository.get_relatives(company_id,
-                                                             InvitationStatus.INVITED,
-                                                             is_company=True)
+        query = await self.action_repository.get_relatives_query(company_id, InvitationStatus.INVITED, True)
+        result = await self.session.execute(query)
+        invites = await self._process_query_results(result)
         return invites
 
     async def get_company_requests(self,
                                    current_user_id: int,
                                    company_id: Optional[int] = None) -> List[GetActionsResponseSchema]:
         await self._validate_company_get(current_user_id, company_id)
-        requests = await self.action_repository.get_relatives(company_id,
-                                                              InvitationStatus.REQUESTED,
-                                                              is_company=True)
+        query = await self.action_repository.get_relatives_query(company_id,
+                                                                 InvitationStatus.REQUESTED,
+                                                                 True)
+        result = await self.session.execute(query)
+        requests = await self._process_query_results(result)
         return requests
 
     async def get_company_members(self,
                                   current_user_id: int,
                                   company_id: Optional[int] = None) -> List[GetActionsResponseSchema]:
         await self._validate_company_get(current_user_id, company_id)
-        members = await self.action_repository.get_relatives(company_id,
-                                                             InvitationStatus.ACCEPTED,
-                                                             is_company=True)
+        query = await self.action_repository.get_relatives_query(company_id,
+                                                                 InvitationStatus.ACCEPTED,
+                                                                 True)
+        result = await self.session.execute(query)
+        members = await self._process_query_results(result)
         return members
 
     async def get_my_requests(self, current_user_id: int) -> List[GetActionsResponseSchema]:
-        requests = await self.action_repository.get_relatives(current_user_id,
-                                                              InvitationStatus.REQUESTED,
-                                                              is_company=False)
+        query = await self.action_repository.get_relatives_query(current_user_id,
+                                                                 InvitationStatus.REQUESTED,
+                                                                 False)
+        result = await self.session.execute(query)
+        requests = await self._process_query_results(result)
         return requests
 
     async def get_my_invites(self, current_user_id: int) -> List[GetActionsResponseSchema]:
-        invites = await self.action_repository.get_relatives(current_user_id,
-                                                             InvitationStatus.INVITED,
-                                                             is_company=False)
+        query = await self.action_repository.get_relatives_query(current_user_id,
+                                                                 InvitationStatus.INVITED,
+                                                                 False)
+        result = await self.session.execute(query)
+        invites = await self._process_query_results(result)
         return invites
 
 
