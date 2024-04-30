@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class BaseCompanySchema(BaseModel):
+class CompanySchema(BaseModel):
     id: int
     name: str
     description: str
@@ -12,10 +12,6 @@ class BaseCompanySchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
-
-
-class CompanySchema(BaseCompanySchema):
-    owner_id: int
 
 
 class CompanyCreateRequest(BaseModel):
@@ -31,10 +27,10 @@ class CompanyUpdateRequest(BaseModel):
 
 
 class CompaniesListResponse(BaseModel):
-    companies: List[BaseCompanySchema]
+    companies: List[CompanySchema]
 
 
-class CompanyDetailResponse(BaseCompanySchema):
+class CompanyDetailResponse(CompanySchema):
     owner_id: int
 
     class Config:

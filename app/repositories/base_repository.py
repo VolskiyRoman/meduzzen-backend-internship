@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.models import Base
+from app.models.base import Base
 
 
 class BaseRepository:
