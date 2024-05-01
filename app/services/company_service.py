@@ -5,8 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.repositories.company_repository import CompanyRepository
 from app.schemas.companies import CompaniesListResponse, CompanySchema
-from app.utils import companies as companies_utils
-from app.utils.companies import NotOwnerException
+from app.utils.exception.companies import NotOwnerException
 
 
 class CompanyService:
