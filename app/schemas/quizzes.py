@@ -2,14 +2,10 @@ from pydantic import BaseModel
 from typing import List
 
 
-class OptionSchema(BaseModel):
-    option_text: str
-
-
 class QuestionSchema(BaseModel):
     question_text: str
-    correct_answer: str
-    options: List[OptionSchema]
+    correct_answer: List[str]
+    options: List[str]
 
 
 class QuizSchema(BaseModel):
@@ -25,7 +21,7 @@ class QuizUpdateSchema(BaseModel):
     frequency_days: int
 
 
-class OptionResponseSchema(BaseModel):
-    id: int
-    option_text: str
-    question_id: int
+class QuizResponseSchema(BaseModel):
+    name: str
+    description: str
+    frequency_days: int

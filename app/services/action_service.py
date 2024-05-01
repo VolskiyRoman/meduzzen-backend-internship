@@ -13,7 +13,7 @@ from app.schemas.actions import ActionSchema, InviteCreateSchema, RequestCreateS
 from app.schemas.companies import CompanySchema
 from app.schemas.users import UserSchema
 from app.utils import companies as companies_utils
-from app.utils.companies import AlreadyInCompanyException, NotOwnerException
+from app.utils.exception.companies import AlreadyInCompanyException, NotOwnerException
 
 
 class ActionService:
