@@ -1,19 +1,19 @@
 """added quizzes
 
-Revision ID: 2f335995fd66
-Revises: dcb11dec4f0f
-Create Date: 2024-04-28 22:46:16.469581
+Revision ID: ac8c9125b9c7
+Revises: cff6b319b458
+Create Date: 2024-05-01 00:18:53.076280
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
 
 # revision identifiers, used by Alembic.
-revision: str = '2f335995fd66'
-down_revision: Union[str, None] = 'dcb11dec4f0f'
+revision: str = 'ac8c9125b9c7'
+down_revision: Union[str, None] = 'cff6b319b458'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -24,15 +24,17 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(length=1000), nullable=False),
     sa.Column('frequency_days', sa.Integer(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_date', sa.DateTime(timezone=True), nullable=True),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('questions',
     sa.Column('question_text', sa.String(length=1000), nullable=False),
-    sa.Column('correct_answer', sa.String(length=255), nullable=False),
-    sa.Column('options', postgresql.ARRAY(sa.String()), nullable=False),
+    sa.Column('correct_answer', sa.ARRAY(sa.String(length=255)), nullable=False),
+    sa.Column('options', sa.ARRAY(sa.String()), nullable=False),
     sa.Column('quiz_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),

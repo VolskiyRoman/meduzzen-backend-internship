@@ -23,22 +23,6 @@ class QuizUpdateSchema(BaseModel):
     name: str
     description: str
     frequency_days: int
-    questions: List[QuestionSchema]
-
-
-class QuizResponseSchema(BaseModel):
-    id: int
-    name: str
-    description: str
-    frequency_days: int
-    questions: List[QuestionSchema]
-
-
-class QuestionResponseSchema(BaseModel):
-    id: int
-    question_text: str
-    correct_answer: str
-    options: List[OptionSchema]
 
 
 class OptionResponseSchema(BaseModel):

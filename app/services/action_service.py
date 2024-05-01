@@ -99,11 +99,11 @@ class ActionService:
                 case InvitationStatus.DECLINED_BY_COMPANY:
                     invite.status = InvitationStatus.REQUESTED
                     return invite
-                case _:
-                    data = action_data.dict()
-                    data["status"] = InvitationStatus.INVITED.value
-                    data["type"] = InvitationType.INVITE.value
-                    return await self.action_repository.create_one(data=data)
+        else:
+            data = action_data.dict()
+            data["status"] = InvitationStatus.INVITED.value
+            data["type"] = InvitationType.INVITE.value
+            return await self.action_repository.create_one(data=data)
 
     async def cancel_invite(self, action_id: int, current_user_id: int) -> ActionSchema:
         action = await self._get_action_or_raise(action_id)
@@ -217,7 +217,8 @@ class ActionService:
         await self.company_repository.is_user_company_owner(current_user_id, company.id)
         return company
 
-    async def _process_query_results(self, results):
+    @staticmethod
+    async def _process_query_results(results):
         actions = []
         for action, user in results.fetchall():
             action_dto = GetActionsResponseSchema(id=action.id, user_id=user.id, user_username=user.username)
@@ -275,32 +276,41 @@ class ActionService:
                               current_user_id: int,
                               company_id: int,
                               user_id: int,
-                              validate_status: InvitationStatus) -> ActionSchema:
+                              validate_role: MemberStatus) -> CompanyMemberSchema:
         company = await self._validate_company_get(current_user_id, company_id)
-        action = await self.action_repository.get_one(company_id=company.id, user_id=user_id)
-        if not action:
+        member = await self.company_repository.get_company_member(user_id, company.id)
+        current_user = await self.company_repository.get_company_member(current_user_id, current_user_id)
+        if not member:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User does not exist",
             )
-        if action.status != validate_status:
+        if current_user.role != validate_role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to make this user admin",
             )
-        return action
+        return member
 
-    async def add_admin(self, current_user_id: int, company_id: int, user_id: int) -> ActionSchema:
-        action = await self._validate_admin(current_user_id, company_id, user_id, InvitationStatus.ACCEPTED)
-        action.status = InvitationStatus.PROMOTED
-        return await self.action_repository.update_one(action.id, {'status': action.status})
+    async def add_admin(self, current_user_id: int, company_id: int, user_id: int) -> CompanyMemberSchema:
+        member = await self._validate_admin(current_user_id, company_id, user_id, MemberStatus.OWNER)
+        await self.company_repository.update_company_member(member, MemberStatus.ADMIN)
+        return member
 
-    async def remove_admin(self, current_user_id: int, company_id: int, user_id: int) -> ActionSchema:
-        action = await self._validate_admin(current_user_id, company_id, user_id, InvitationStatus.PROMOTED)
-        action.status = InvitationStatus.ACCEPTED
-        return await self.action_repository.update_one(action.id, {'status': action.status})
+    async def remove_admin(self, current_user_id: int, company_id: int, user_id: int) -> CompanyMemberSchema:
+        member = await self._validate_admin(current_user_id, company_id, user_id, MemberStatus.OWNER)
+        await self.company_repository.update_company_member(member, MemberStatus.USER)
+        return member
 
     async def get_admins(self, current_user_id: int, company_id: int) -> List[GetActionsResponseSchema]:
         await self._validate_company_get(current_user_id, company_id)
-        return await self.action_repository.get_relatives(company_id, InvitationStatus.PROMOTED, is_company=True)
 
+        admins = await self.company_repository.get_admins(company_id)
+        admins_schemas = [
+            GetActionsResponseSchema(
+                id=admin.id,
+                user_id=admin.user_id,
+                user_username=await self.user_repository.get_user_username(admin.user_id)
+            ) for admin in admins
+        ]
+        return admins_schemas

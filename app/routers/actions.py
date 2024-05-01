@@ -7,7 +7,8 @@ from app.db.connection import get_async_session
 from app.repositories.action_repository import ActionRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.actions import ActionSchema, InviteCreateSchema, RequestCreateSchema, GetActionsResponseSchema
+from app.schemas.actions import ActionSchema, InviteCreateSchema, RequestCreateSchema, GetActionsResponseSchema, \
+    CompanyMemberSchema
 from app.schemas.users import UserSchema
 from app.services.action_service import ActionService
 from app.services.auth_service import AuthService
@@ -154,20 +155,20 @@ async def get_company_members(
     return await action_service.get_company_members(current_user_id, company_id)
 
 
-@router.patch("/add_admin", response_model=ActionSchema)
+@router.patch("/add_admin", response_model=CompanyMemberSchema)
 async def add_admin(company_id: int,
                     user_id: int,
                     current_user: UserSchema = Depends(AuthService.get_current_user),
-                    action_service: ActionService = Depends(get_action_service)) -> ActionSchema:
+                    action_service: ActionService = Depends(get_action_service)) -> CompanyMemberSchema:
     current_user_id = current_user.id
     return await action_service.add_admin(current_user_id, company_id, user_id)
 
 
-@router.patch("/remove_admin", response_model=ActionSchema)
+@router.patch("/remove_admin", response_model=CompanyMemberSchema)
 async def remove_admin(company_id: int,
                        user_id: int,
                        current_user: UserSchema = Depends(AuthService.get_current_user),
-                       action_service: ActionService = Depends(get_action_service)) -> ActionSchema:
+                       action_service: ActionService = Depends(get_action_service)) -> CompanyMemberSchema:
     current_user_id = current_user.id
     return await action_service.remove_admin(current_user_id, company_id, user_id)
 
