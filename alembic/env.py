@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.company import Company
 from app.models.action import CompanyAction
 from app.models.company_member import CompanyMember
+from app.models.quiz import Quiz, Question
 
 
 config = context.config

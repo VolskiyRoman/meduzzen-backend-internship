@@ -1,4 +1,9 @@
+from typing import List
+
+from fastapi import HTTPException
 from sqlalchemy import select, delete
+from sqlalchemy.exc import NoResultFound
+from starlette import status
 
 from app.enums.invite import MemberStatus
 from app.models.company import Company
@@ -54,3 +59,24 @@ class CompanyRepository(BaseRepository):
                                             CompanyMember.user_id == user_id)
         await self.session.execute(query)
         await self.session.commit()
+
+    async def get_company_member(self, user_id: int, company_id: int):
+        query = select(CompanyMember).filter(
+            CompanyMember.user_id == user_id,
+            CompanyMember.company_id == company_id,
+        )
+        company_member = await self.session.execute(query)
+        return company_member.scalar_one_or_none()
+
+    async def update_company_member(self, company_member: CompanyMemberSchema, role: MemberStatus) -> None:
+        member = await self.get_company_member(company_member.user_id, company_member.company_id)
+        member.role = role
+        await self.session.commit()
+
+    async def get_admins(self, company_id: int) -> List[CompanyMember]:
+        query = select(CompanyMember).filter(
+            CompanyMember.company_id == company_id,
+            CompanyMember.role == MemberStatus.ADMIN
+        )
+        result = await self.session.execute(query)
+        return result.scalars().all()
