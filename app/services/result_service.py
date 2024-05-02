@@ -83,7 +83,7 @@ class ResultService:
 
         result_schema = ResultSchema.from_orm(result)
 
-        await self.result_repository.create_one(result_schema.dict())
+        result = await self.result_repository.create_one(result_schema.dict())
 
         key = f"quiz_result:{current_user_id}:{company_id}:{quiz_id}:{result.id}"
         serialized_result = json.dumps(redis_result)
