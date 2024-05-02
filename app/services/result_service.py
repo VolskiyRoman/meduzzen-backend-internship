@@ -1,7 +1,12 @@
+import json
+from datetime import timedelta
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from app.db.redis_connection import redis_connection
+from app.models.result import Result
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.quizzes_repository import QuizRepository
 from app.repositories.result_repository import ResultRepository
@@ -43,25 +48,49 @@ class ResultService:
                 detail="Quiz not found")
         member = await self._validate_is_company_member(current_user_id, company_id)
         questions = await self.quiz_repository.get_questions_by_quiz_id(quiz_id)
+        redis_result = {
+            'user_id': current_user_id,
+            'company_id': company_id,
+            'quiz_id': quiz_id,
+            'questions': []
+        }
         total_questions = 0
         correct_answers = 0
         for question in questions:
             total_questions += 1
             answer = quiz_request.answers.get(question.id)
+
+            question_data = {
+                'question': question.question_text,
+                'user_answer': answer,
+                'is_correct': answer == question.correct_answer
+            }
+            redis_result['questions'].append(question_data)
+
             is_correct = set(answer) == set(question.correct_answer)
             if is_correct:
                 correct_answers += 1
         score = correct_answers / total_questions
         rounded_score = round(score, 2)
-        result_data = {
-            "company_member_id": member.id,
-            "quiz_id": quiz_id,
-            "score": rounded_score,
-            "total_questions": total_questions,
-            "correct_answers": correct_answers
-        }
-        await self.result_repository.create_one(result_data)
-        return ResultSchema(**result_data)
+
+        result = Result(
+            company_member_id=member.id,
+            quiz_id=quiz_id,
+            correct_answers=correct_answers,
+            total_questions=total_questions,
+            score=rounded_score
+        )
+
+        result_schema = ResultSchema.from_orm(result)
+
+        await self.result_repository.create_one(result_schema.dict())
+
+        key = f"quiz_result:{current_user_id}:{company_id}:{quiz_id}:{result.id}"
+        serialized_result = json.dumps(redis_result)
+        await redis_connection.set(key, serialized_result)
+        await redis_connection.expire(key, timedelta(hours=48))
+
+        return ResultSchema.from_orm(result)
 
     async def get_company_rating(self, current_user_id: int, company_id: int) -> float:
         company = await self.company_repository.get_one(id=company_id)

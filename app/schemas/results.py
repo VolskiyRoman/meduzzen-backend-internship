@@ -10,6 +10,10 @@ class ResultSchema(BaseModel):
     total_questions: int
     correct_answers: int
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 class QuizRequest(BaseModel):
     answers: Dict[int, List[str]]
