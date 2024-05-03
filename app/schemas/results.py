@@ -23,3 +23,8 @@ class CompanyRating(BaseModel):
     company_member_id: int
     company_id: int
     rating: int
+
+
+class ExportedFile(BaseModel):
+    file: bytes
+    filename: str

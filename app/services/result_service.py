@@ -1,5 +1,9 @@
+import csv
 import json
-from datetime import timedelta
+import os
+from datetime import timedelta, datetime
+from typing import List, Optional
+import pytz
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,8 +15,10 @@ from app.repositories.quizzes_repository import QuizRepository
 from app.repositories.result_repository import ResultRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.actions import CompanyMemberSchema
-from app.schemas.results import ResultSchema, QuizRequest
+from app.schemas.companies import CompanySchema
+from app.schemas.results import ResultSchema, QuizRequest, ExportedFile
 from app.services.redis_service import redis_service
+from app.utils.export_data import export_redis_data
 
 
 class ResultService:
@@ -39,6 +45,14 @@ class ResultService:
             )
         return member
 
+    @staticmethod
+    async def get_last_result(results: List[Result]) -> Optional[Result]:
+        if results:
+            utc = pytz.UTC
+            return max(results, key=lambda x: x.created_date.astimezone(utc))
+        else:
+            return None
+
     async def create_result(self, quiz_id: int, current_user_id: int, quiz_request: QuizRequest) -> ResultSchema:
         quiz = await self.quiz_repository.get_one(id=quiz_id)
         company_id = quiz.company_id
@@ -48,6 +62,15 @@ class ResultService:
                 detail="Quiz not found")
         member = await self._validate_is_company_member(current_user_id, company_id)
         questions = await self.quiz_repository.get_questions_by_quiz_id(quiz_id)
+        results = await self.result_repository.get_many(company_member_id=member.id)
+        last_result = await self.get_last_result(results)
+
+        if last_result and datetime.utcnow().replace(tzinfo=pytz.UTC) - last_result.created_date < timedelta(hours=48):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You can't create a new result within 48 hours of the last one."
+            )
+
         redis_result = {
             'user_id': current_user_id,
             'company_id': company_id,
@@ -88,7 +111,7 @@ class ResultService:
         key = f"quiz_result:{current_user_id}:{company_id}:{quiz_id}:{result.id}"
         serialized_result = json.dumps(redis_result)
         expiration_time_seconds = timedelta(hours=48).total_seconds()
-        await redis_service.connect(key, serialized_result, int(expiration_time_seconds))
+        await redis_service.redis_set(key, serialized_result, int(expiration_time_seconds))
         return ResultSchema.from_orm(result)
 
     async def get_company_rating(self, current_user_id: int, company_id: int) -> float:
@@ -133,3 +156,47 @@ class ResultService:
             )
         global_average_score = total_average_score / total_count
         return global_average_score
+
+    async def _validate_export(self, company_id: int, current_user_id: int) -> CompanySchema:
+        company = await self.company_repository.get_one(id=company_id)
+        if not await self.company_repository.is_user_company_owner(current_user_id, company.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to export this company to this user"
+            )
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found"
+            )
+        return company
+
+    @staticmethod
+    async def _check_export_format(file_format: str) -> None:
+        if file_format not in ['json', 'csv']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File format not supported"
+            )
+
+    async def company_answers_list(self, company_id: int, file_format: str, current_user_id: int) -> ExportedFile:
+        await self._validate_export(company_id, current_user_id)
+        query = f"quiz_result:*:{company_id}:*"
+        return await export_redis_data(query=query, file_format=file_format)
+
+    async def user_answers_list(self, company_id: int, user_id: int, file_format: str, current_user_id: int) -> ExportedFile:
+        await self._validate_export(company_id, current_user_id)
+        user = await self.user_repository.get_one(id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        query = f"quiz_result:{user_id}:{company_id}:*"
+        return await export_redis_data(query=query, file_format=file_format)
+
+    async def my_answers_list(self, current_user_id, file_format) -> ExportedFile:
+        await self._check_export_format(file_format)
+        await self.user_repository.get_one(id=current_user_id)
+        query = f"quiz_result:{current_user_id}:*:*"
+        return await export_redis_data(query=query, file_format=file_format)

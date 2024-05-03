@@ -68,6 +68,13 @@ class CompanyRepository(BaseRepository):
         company_member = await self.session.execute(query)
         return company_member.scalar_one_or_none()
 
+    async def get_company_members(self, user_id: int):
+        query = select(CompanyMember).filter(
+            CompanyMember.user_id == user_id,
+        )
+        company_members = await self.session.execute(query)
+        return company_members.scalar_one_or_none()
+
     async def update_company_member(self, company_member: CompanyMemberSchema, role: MemberStatus) -> None:
         member = await self.get_company_member(company_member.user_id, company_member.company_id)
         member.role = role
