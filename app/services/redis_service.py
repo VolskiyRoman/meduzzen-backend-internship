@@ -8,7 +8,7 @@ class RedisService:
         self.host = settings.REDIS_HOST
         self.connection = redis_connection
 
-    async def connect(self, key, serialized_result, expiration):
+    async def redis_set(self, key, serialized_result, expiration):
         await self.connection.set(key, serialized_result, expiration)
 
 
