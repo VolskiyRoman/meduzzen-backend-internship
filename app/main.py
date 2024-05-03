@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from loguru import logger
 from app.core.config import settings
-from app.routers import healthcheck, db_healthcheck, users, auth, companies, actions, quizzes
+from app.routers import healthcheck, db_healthcheck, users, auth, companies, actions, quizzes, result
 import uvicorn
 
 app = FastAPI()
@@ -17,6 +17,7 @@ app.include_router(auth.router, prefix="/auth")
 app.include_router(companies.router, prefix="/company")
 app.include_router(actions.router, prefix="/actions")
 app.include_router(quizzes.router, prefix="/quizzes")
+app.include_router(result.router, prefix="/results")
 
 
 if __name__ == "__main__":
