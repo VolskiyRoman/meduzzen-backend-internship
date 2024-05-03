@@ -5,7 +5,6 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from app.db.redis_connection import redis_connection
 from app.models.result import Result
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.quizzes_repository import QuizRepository
@@ -13,6 +12,7 @@ from app.repositories.result_repository import ResultRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.actions import CompanyMemberSchema
 from app.schemas.results import ResultSchema, QuizRequest
+from app.services.redis_service import redis_service
 
 
 class ResultService:
@@ -87,9 +87,8 @@ class ResultService:
 
         key = f"quiz_result:{current_user_id}:{company_id}:{quiz_id}:{result.id}"
         serialized_result = json.dumps(redis_result)
-        await redis_connection.set(key, serialized_result)
-        await redis_connection.expire(key, timedelta(hours=48))
-
+        expiration_time_seconds = timedelta(hours=48).total_seconds()
+        await redis_service.connect(key, serialized_result, int(expiration_time_seconds))
         return ResultSchema.from_orm(result)
 
     async def get_company_rating(self, current_user_id: int, company_id: int) -> float:
@@ -101,14 +100,14 @@ class ResultService:
             )
         member = await self._validate_is_company_member(current_user_id, company.id)
         results = await self.result_repository.get_many(company_member_id=member.id)
+
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User doesn't have any results"
             )
 
-        total_score = sum(result.score for result in results)
-        average_score = total_score / len(results) if len(results) > 0 else 0.0
+        average_score = await self.result_repository.calculate_rating(member.id)
 
         return average_score
 
@@ -124,8 +123,7 @@ class ResultService:
         for member in members:
             results = await self.result_repository.get_many(company_member_id=member.id)
             if results:
-                total_score = sum(result.score for result in results)
-                average_score = total_score / len(results)
+                average_score = await self.result_repository.calculate_rating(member.id)
                 total_average_score += average_score
                 total_count += 1
         if total_count == 0:

@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from app.db.connection import get_async_session
-from app.repositories.user_repository import UserRepository
 from app.schemas.users import UserSchema, UsersListResponse, UserUpdateRequest, BaseUserSchema
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
+from app.utils.call_services import get_user_service
 
 router = APIRouter(tags=["Users"])
 
@@ -17,11 +15,6 @@ async def verify_user_permission(user_id: int, current_user: UserSchema = Depend
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to perform this action",
         )
-
-
-async def get_user_service(session: AsyncSession = Depends(get_async_session)) -> UserService:
-    user_repository = UserRepository(session)
-    return UserService(session=session, repository=user_repository)
 
 
 @router.get('/', response_model=UsersListResponse)
