@@ -1,13 +1,13 @@
+import secrets
 from datetime import datetime
 from http.client import HTTPException
 from random import choices
 from string import ascii_lowercase, digits
-import secrets
 
+from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import ExpiredSignatureError
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status, Depends
 
 from app.core.config import settings
 from app.db.connection import get_async_session
@@ -71,7 +71,6 @@ class AuthService:
             "email": email,
             "username": username,
             "password": hashed_password.decode("utf-8"),
-            "is_admin": data.get("is_admin", False),
         }
 
         await self.repository.create_one(user_data)
@@ -126,10 +125,8 @@ class AuthService:
                 "email": user_email,
                 "username": username,
                 "password": hashed_password.decode("utf-8"),
-                "is_admin": decoded_token.get("is_admin", False),
             }
 
-            await user_repository.create_one(user_data)
-            current_user = username
+            current_user = await user_repository.create_one(user_data)
 
         return current_user

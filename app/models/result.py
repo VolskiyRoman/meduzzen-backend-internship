@@ -12,5 +12,3 @@ class Result(BaseModel):
     total_questions = Column(Integer, nullable=False)
     correct_answers = Column(Integer)
     company_member_id = Column(Integer, ForeignKey('company_members.id'))
-
-    company_member = relationship('CompanyMember', backref=backref('results', cascade='all, delete-orphan'))

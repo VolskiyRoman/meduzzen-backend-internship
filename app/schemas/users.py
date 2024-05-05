@@ -15,7 +15,6 @@ class BaseUserSchema(BaseModel):
 
 class UserSchema(BaseUserSchema):
     password: str
-    is_admin: bool
 
 
 class SignUpRequest(BaseModel):
