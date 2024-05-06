@@ -21,3 +21,8 @@ class UserRepository(BaseRepository):
         query = select(CompanyMember).where(CompanyMember.user_id == user_id)
         members = await self.session.execute(query)
         return members.scalars().all()
+
+    async def get_users_by_ids(self, user_ids: List[int]) -> List[User]:
+        query = select(User).where(User.id.in_(user_ids))
+        users = await self.session.execute(query)
+        return users.scalars().all()

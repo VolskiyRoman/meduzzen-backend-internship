@@ -3,12 +3,13 @@ from sqlalchemy.orm import relationship
 from .base import BaseModel
 
 
-class CompanyMemberNotification(BaseModel):
-    __tablename__ = 'user_notifications'
-
-    id = Column(Integer, primary_key=True)
+class BaseNotification(BaseModel):
+    __abstract__ = True
     text = Column(String, nullable=False)
     is_read = Column(Boolean, nullable=False, default=False)
-    company_member_id = Column(Integer, ForeignKey('company_members.id'), nullable=False)
 
-    company_member = relationship("CompanyMember", back_populates="notifications")
+
+class UserNotification(BaseNotification):
+    __tablename__ = 'user_notifications'
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user = relationship("User", back_populates="notifications")

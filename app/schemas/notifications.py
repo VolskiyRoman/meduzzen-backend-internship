@@ -5,4 +5,4 @@ class NotificationSchema(BaseModel):
     id: int
     text: str
     is_read: bool
-    company_member_id: int
+    user_id: int

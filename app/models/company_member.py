@@ -11,5 +11,3 @@ class CompanyMember(BaseModel):
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     company_id = Column(Integer, ForeignKey('companies.id', ondelete="CASCADE"), nullable=False)
     role = Column(Enum(MemberStatus), nullable=False)
-
-    notifications = relationship("CompanyMemberNotification", back_populates="company_member")
