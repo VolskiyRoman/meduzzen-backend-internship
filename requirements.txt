@@ -22,3 +22,5 @@ PyJWT==2.8.0
 cryptography==42.0.5
 match==0.3.2
 pytz==2024.1
+celery==5.4.0
+flower==2.0.1

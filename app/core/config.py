@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     AUTH0_USERNAME_PREFIX: str
     AUTH0_TOKEN_PREFIX: str
 
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
+
     class Config:
         env_file = ".env"
 

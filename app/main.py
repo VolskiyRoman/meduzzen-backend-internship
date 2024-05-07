@@ -1,10 +1,10 @@
+import uvicorn
 from fastapi import FastAPI
-
 from loguru import logger
+
 from app.core.config import settings
 from app.routers import healthcheck, db_healthcheck, users, auth, companies, actions, quizzes, result, analytics, \
     notifications
-import uvicorn
 
 app = FastAPI()
 
