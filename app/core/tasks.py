@@ -10,54 +10,46 @@ from app.models.result import Result
 from app.models.user import User
 
 
+from sqlalchemy import join
+
+
 async def first_task():
     async for session in get_async_session():
-        query_users = select(User)
-        result_users = await session.execute(query_users)
-        users = result_users.scalars().all()
-        user_results_dict = {}
+        query = (
+            select(User, CompanyMember, Result, Quiz)
+            .join(CompanyMember, User.id == CompanyMember.user_id)
+            .join(Result, CompanyMember.id == Result.company_member_id)
+            .join(Quiz, Result.quiz_id == Quiz.id)
+            .order_by(Result.quiz_id, Result.created_date.desc())
+        )
+        result = await session.execute(query)
+        rows = result.fetchall()
 
-        for user in users:
-            query_company_members = (
-                select(CompanyMember.id)
-                .filter(CompanyMember.user_id == user.id)
-            )
-            result_company_members = await session.execute(query_company_members)
-            company_members = result_company_members.scalars().all()
+        user_notifications = {}
 
-            for member_id in company_members:
-                query_results = (
-                    select(Result)
-                    .filter(Result.company_member_id == member_id)
-                    .order_by(Result.quiz_id, Result.created_date.desc())
+        for user, company_member, result, quiz in rows:
+            if user.id not in user_notifications:
+                user_notifications[user.id] = []
+
+            if quiz.id not in user_notifications[user.id]:
+                query_quiz_frequency = (
+                    select(Quiz.frequency_days)
+                    .where(Quiz.id == quiz.id)
                 )
-                result_results = await session.execute(query_results)
-                results = result_results.scalars().all()
+                result_quiz_frequency = await session.execute(query_quiz_frequency)
+                quiz_frequency_days = result_quiz_frequency.scalar()
 
-                if user.id not in user_results_dict:
-                    user_results_dict[user.id] = []
+                created_date = result.created_date.replace(tzinfo=None)
+                time_passed = datetime.utcnow().replace(tzinfo=None) - created_date
+                is_time_passed = time_passed.days >= quiz_frequency_days
 
-                last_quiz_ids = set()
+                if is_time_passed:
+                    notification_text = f"You should complete {quiz.id} quiz again!"
+                    user_notification = UserNotification(user_id=user.id, text=notification_text)
+                    user_notifications[user.id].append(user_notification)
 
-                for result in results:
-                    if result.quiz_id not in last_quiz_ids:
-                        user_results_dict[user.id].append(result)
-                        last_quiz_ids.add(result.quiz_id)
-
-                        query_quiz_frequency = (
-                            select(Quiz.frequency_days)
-                            .where(Quiz.id == result.quiz_id)
-                        )
-                        result_quiz_frequency = await session.execute(query_quiz_frequency)
-                        quiz_frequency_days = result_quiz_frequency.scalar()
-
-                        created_date = result.created_date.replace(tzinfo=None)
-                        time_passed = datetime.utcnow().replace(tzinfo=None) - created_date
-                        is_time_passed = time_passed.days >= quiz_frequency_days
-
-                        if is_time_passed:
-                            notification_text = f"You should complete {result.quiz_id} quiz again!"
-                            user_notification = UserNotification(user_id=user.id, text=notification_text)
-                            session.add(user_notification)
+        for notifications in user_notifications.values():
+            session.add_all(notifications)
 
         await session.commit()
+

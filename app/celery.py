@@ -23,4 +23,3 @@ celery.conf.beat_schedule = {
         'schedule': crontab(hour="0", minute="0"),
     },
 }
-
