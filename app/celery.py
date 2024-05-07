@@ -2,6 +2,7 @@ import asyncio
 from datetime import timedelta
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.tasks import first_task
 
@@ -19,7 +20,7 @@ def send_notifications():
 celery.conf.beat_schedule = {
     'run-task': {
         'task': 'app.celery.send_notifications',
-        'schedule': timedelta(seconds=10),
+        'schedule': crontab(hour=0, minute=0),
     },
 }
 
