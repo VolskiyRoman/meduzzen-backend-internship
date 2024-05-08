@@ -47,7 +47,7 @@ class AuthService:
         token_info = TokenInfo(access_token=token, token_type="Bearer")
         return token_info
 
-    async def create_user(self, data: dict) -> TokenInfo:
+    async def create_user(self, data: dict) -> dict:
         email = data.get("email")
         existing_user_email = await self.repository.get_one(email=email)
         if existing_user_email:
@@ -78,7 +78,7 @@ class AuthService:
         token = await auth_utils.encode_jwt(payload={"email": email})
         token_info = TokenInfo(access_token=token, token_type="Bearer")
 
-        return token_info
+        return {'message': 'User created'}
 
     @staticmethod
     async def token_validator(token: str) -> dict:
