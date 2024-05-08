@@ -8,8 +8,6 @@ from app.models.notification import UserNotification
 from app.models.quiz import Quiz
 from app.models.result import Result
 from app.models.user import User
-
-
 from sqlalchemy import join
 
 
@@ -52,4 +50,3 @@ async def first_task():
             session.add_all(notifications)
 
         await session.commit()
-
