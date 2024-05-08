@@ -43,28 +43,28 @@ class NotificationService:
         if not notification:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail="Notification not found")
-        user_id = notification.user_id
-        user = await self.user_repository.get_one(id=user_id)
-        if user.id != current_user_id:
+        if notification.user_id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Not enough permissions")
-        notification.is_read = True
-        await self.notification_repository.update_one(notification.id, {"is_read": True})
-        return notification
+        await self.notification_repository.mark_notification_as_read(notification)
+        return NotificationSchema(
+            id=notification.id,
+            text=notification.text,
+            is_read=notification.is_read,
+            user_id=notification.user_id
+        )
 
     async def mark_as_read_all(self, current_user_id: int) -> List[NotificationSchema]:
         notifications = await self.notification_repository.get_unread_notifications_for_user(current_user_id)
-        await self.notification_repository.mark_notifications_as_read(notifications)
+        await self.notification_repository.mark_notifications_as_read_all(current_user_id)
         notification_schemas = [
             NotificationSchema(
                 id=notification.id,
                 text=notification.text,
-                is_read=notification.is_read,
+                is_read=True,
                 user_id=notification.user_id
             )
             for notification in notifications
         ]
+
         return notification_schemas
-
-
-

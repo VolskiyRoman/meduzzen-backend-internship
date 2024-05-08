@@ -2,7 +2,7 @@ from typing import List
 
 from sqlalchemy import select, update
 
-from app.models.notification import UserNotification
+from app.models.notification import UserNotification, BaseNotification
 from app.models.user import User
 from app.repositories.base_repository import BaseRepository
 
@@ -37,11 +37,14 @@ class NotificationRepository(BaseRepository):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def mark_notifications_as_read(self, notifications: List[UserNotification]) -> None:
-        notification_ids = [notification.id for notification in notifications]
+    async def mark_notification_as_read(self, notification: UserNotification) -> None:
+        notification.is_read = True
+        await self.session.commit()
+
+    async def mark_notifications_as_read_all(self, user_id: int) -> None:
         await self.session.execute(
-            update(UserNotification)
-            .where(UserNotification.id.in_(notification_ids))
+            update(BaseNotification)
+            .where(UserNotification.user_id == user_id)
             .values(is_read=True)
         )
         await self.session.commit()
