@@ -18,6 +18,6 @@ jobs:
           cd /home/ubuntu/meduzzen-backend-internship &&
           ls -a &&
           sudo docker-compose down &&
-          git pull origin develop &&
+          git pull &&
           git checkout develop &&
           sudo docker-compose up --build -d
