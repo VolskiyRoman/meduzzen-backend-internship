@@ -100,3 +100,5 @@ Database migrations are scripts or files that allow you to manage changes to you
 For more information and advanced usage of Alembic, refer to the [Alembic documentation](https://alembic.sqlalchemy.org/en/latest/).
 
 By following these steps, you can effectively manage database schema changes using Alembic migrations in conjunction with SQLAlchemy. This allows for seamless deployment and maintenance of database schemas in your projects.
+
+))
