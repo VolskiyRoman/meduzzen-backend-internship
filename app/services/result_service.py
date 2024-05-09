@@ -1,14 +1,12 @@
-import csv
 import json
-import os
 from datetime import timedelta, datetime
-from typing import List, Optional
-import pytz
 
+import pytz
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from app.enums.file_format import FileFormat
 from app.models.result import Result
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.quizzes_repository import QuizRepository
@@ -45,14 +43,6 @@ class ResultService:
             )
         return member
 
-    @staticmethod
-    async def get_last_result(results: List[Result]) -> Optional[Result]:
-        if results:
-            utc = pytz.UTC
-            return max(results, key=lambda x: x.created_date.astimezone(utc))
-        else:
-            return None
-
     async def create_result(self, quiz_id: int, current_user_id: int, quiz_request: QuizRequest) -> ResultSchema:
         quiz = await self.quiz_repository.get_one(id=quiz_id)
         company_id = quiz.company_id
@@ -62,8 +52,7 @@ class ResultService:
                 detail="Quiz not found")
         member = await self._validate_is_company_member(current_user_id, company_id)
         questions = await self.quiz_repository.get_questions_by_quiz_id(quiz_id)
-        results = await self.result_repository.get_many(company_member_id=member.id)
-        last_result = await self.get_last_result(results)
+        last_result = await self.result_repository.get_last_result_for_user(current_user_id)
 
         if last_result and datetime.utcnow().replace(tzinfo=pytz.UTC) - last_result.created_date < timedelta(hours=48):
             raise HTTPException(
@@ -114,13 +103,17 @@ class ResultService:
         await redis_service.redis_set(key, serialized_result, int(expiration_time_seconds))
         return ResultSchema.from_orm(result)
 
-    async def get_company_rating(self, current_user_id: int, company_id: int) -> float:
+    async def _get_company_or_raise(self, company_id: int) -> CompanySchema:
         company = await self.company_repository.get_one(id=company_id)
         if not company:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Company not found"
             )
+        return company
+
+    async def get_company_rating(self, current_user_id: int, company_id: int) -> float:
+        company = await self._get_company_or_raise(company_id)
         member = await self._validate_is_company_member(current_user_id, company.id)
         results = await self.result_repository.get_many(company_member_id=member.id)
 
@@ -134,13 +127,17 @@ class ResultService:
 
         return average_score
 
-    async def get_global_rating(self, current_user_id: int) -> float:
-        members = await self.user_repository.get_company_members_by_user_id(current_user_id)
-        if not members:
+    @staticmethod
+    async def _check_is_user_in_companies(company_members):
+        if not company_members:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not a member of companies"
             )
+
+    async def get_global_rating(self, current_user_id: int) -> float:
+        members = await self.user_repository.get_company_members_by_user_id(current_user_id)
+        await self._check_is_user_in_companies(members)
         total_average_score = 0
         total_count = 0
         for member in members:
@@ -172,19 +169,19 @@ class ResultService:
         return company
 
     @staticmethod
-    async def _check_export_format(file_format: str) -> None:
-        if file_format not in ['json', 'csv']:
+    async def _check_export_format(file_format: FileFormat) -> None:
+        if file_format not in [FileFormat.JSON, FileFormat.CSV]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="File format not supported"
             )
 
-    async def company_answers_list(self, company_id: int, file_format: str, current_user_id: int) -> ExportedFile:
+    async def company_answers_list(self, company_id: int, file_format: FileFormat, current_user_id: int) -> ExportedFile:
         await self._validate_export(company_id, current_user_id)
         query = f"quiz_result:*:{company_id}:*"
         return await export_redis_data(query=query, file_format=file_format)
 
-    async def user_answers_list(self, company_id: int, user_id: int, file_format: str, current_user_id: int) -> ExportedFile:
+    async def user_answers_list(self, company_id: int, user_id: int, file_format: FileFormat, current_user_id: int) -> ExportedFile:
         await self._validate_export(company_id, current_user_id)
         user = await self.user_repository.get_one(id=user_id)
         if not user:
@@ -200,3 +197,95 @@ class ResultService:
         await self.user_repository.get_one(id=current_user_id)
         query = f"quiz_result:{current_user_id}:*:*"
         return await export_redis_data(query=query, file_format=file_format)
+
+    @staticmethod
+    async def _make_chart_data(results: list) -> dict:
+        chart_data = {}
+        current_total_questions = 0
+        current_correct_answers = 0
+        for result in results:
+            current_total_questions += result.total_questions
+            current_correct_answers += result.correct_answers
+            chart_data[result.created_date] = current_correct_answers / current_total_questions
+
+        return chart_data
+
+    async def my_quiz_results(self, current_user_id, quiz_id: int) -> dict:
+        quiz = await self.quiz_repository.get_one(id=quiz_id)
+        company_id = quiz.company_id
+        if not quiz:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quiz not found"
+            )
+        member = await self._validate_is_company_member(current_user_id, company_id)
+        results = await self.result_repository.get_many(company_member_id=member.id, quiz_id=quiz_id)
+        chart_data = await self._make_chart_data(results)
+        return chart_data
+
+    async def my_quizzes_latest_results(self, current_user_id: int) -> dict:
+        results = await self.result_repository.get_latest_results_for_company_member(current_user_id)
+        latest_results = {}
+        for result in results:
+            latest_results[result.quiz_id] = result.created_date.isoformat()
+        return latest_results
+
+    async def _validate_company_owner_analytics(self, current_user_id: int, company_id: int) -> None:
+        if not await self.company_repository.is_user_company_owner(current_user_id, company_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to get this data"
+            )
+
+    async def company_members_results(self, current_user_id: int, company_id: int) -> dict:
+        await self._get_company_or_raise(company_id)
+        await self._validate_company_owner_analytics(current_user_id, company_id)
+        company = await self.company_repository.get_one(id=company_id)
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found"
+            )
+        results = await self.company_repository.get_company_members_result_data(company_id)
+
+        member_results = {}
+        for result in results:
+            member_id = result.company_member_id
+            if member_id not in member_results:
+                member_results[member_id] = []
+            member_results[member_id].append(result)
+
+        chart_data = {}
+        for member_id, member_result in member_results.items():
+            chart_data[member_id] = await self._make_chart_data(member_result)
+
+        return chart_data
+
+    async def company_member_results(self, company_id: int, company_member_id, current_user_id: int) -> dict:
+        await self._get_company_or_raise(company_id)
+        await self._validate_company_owner_analytics(current_user_id, company_id)
+        member = await self.company_repository.get_company_member(company_member_id, company_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company member not found"
+            )
+        results = await self.result_repository.get_many(company_member_id=member.id)
+        chart_data = await self._make_chart_data(results)
+        return chart_data
+
+    async def company_members_result_last(self, company_id: int, current_user_id: int) -> dict:
+        await self._get_company_or_raise(company_id)
+        await self._validate_company_owner_analytics(current_user_id, company_id)
+
+        latest_results = await self.result_repository.get_latest_results_for_company(company_id)
+        results_dict = {}
+
+        for result in latest_results:
+            user_id = result.company_member_id
+            if user_id not in results_dict:
+                results_dict[user_id] = {}
+            results_dict[user_id][result.quiz_id] = result.created_date
+
+        return results_dict
+
