@@ -1,0 +1,25 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+jobs:
+
+  deployment:
+    runs-on: self-hosted
+    steps:
+      - name: Open project folder
+        run: cd /home/ubuntu/meduzzen-backend-internship
+      - name: Stop and remove old containers
+        run: sudo docker-compose down
+      - name: Pull develop branch from remote
+        run: git pull origin develop
+      - name: Set branch to develop
+        run: git checkout develop
+      - name: Build and start new containers
+        run: sudo docker-compose up --build -d
