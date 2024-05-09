@@ -14,6 +14,7 @@ from app.models.action import CompanyAction
 from app.models.company_member import CompanyMember
 from app.models.quiz import Quiz, Question
 from app.models.result import Result
+from app.models.notification import BaseNotification, UserNotification
 
 
 config = context.config

@@ -74,7 +74,7 @@ class CompanyRepository(BaseRepository):
             CompanyMember.user_id == user_id,
         )
         company_members = await self.session.execute(query)
-        return company_members.scalar_one_or_none()
+        return company_members.scalars().all()
 
     async def update_company_member(self, company_member: CompanyMemberSchema, role: MemberStatus) -> None:
         member = await self.get_company_member(company_member.user_id, company_member.company_id)
@@ -100,7 +100,11 @@ class CompanyRepository(BaseRepository):
         return result.scalars().all()
 
     async def get_company_members(self, company_id: int) -> List[CompanyMember]:
-        query = select(CompanyMember).filter(company_id==company_id)
+        query = select(CompanyMember).filter(CompanyMember.company_id == company_id)
         result = await self.session.execute(query)
         return result.scalars().all()
 
+    async def get_company_member_by_id(self, company_member_id: int) -> CompanyMember:
+        query = select(CompanyMember).filter(CompanyMember.id == company_member_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()

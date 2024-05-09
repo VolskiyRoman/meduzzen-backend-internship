@@ -4,12 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.connection import get_async_session
 from app.repositories.action_repository import ActionRepository
 from app.repositories.company_repository import CompanyRepository
+from app.repositories.notification_repository import NotificationRepository
 from app.repositories.quizzes_repository import QuizRepository
 from app.repositories.result_repository import ResultRepository
 from app.repositories.user_repository import UserRepository
 from app.services.action_service import ActionService
 from app.services.auth_service import AuthService
 from app.services.company_service import CompanyService
+from app.services.notification_service import NotificationService
 from app.services.quiz_service import QuizService
 from app.services.result_service import ResultService
 from app.services.user_service import UserService
@@ -36,10 +38,14 @@ async def get_quizzes_service(session: AsyncSession = Depends(get_async_session)
     action_repository = ActionRepository(session)
     company_repository = CompanyRepository(session)
     quiz_repository = QuizRepository(session)
+    notification_repository = NotificationRepository(session)
+    user_repository = UserRepository(session)
     return QuizService(session=session,
                        quiz_repository=quiz_repository,
                        action_repository=action_repository,
-                       company_repository=company_repository)
+                       company_repository=company_repository,
+                       notification_repository=notification_repository,
+                       user_repository=user_repository)
 
 
 async def get_company_service(session: AsyncSession = Depends(get_async_session)) -> CompanyService:
@@ -60,3 +66,13 @@ async def get_action_service(session: AsyncSession = Depends(get_async_session))
                          action_repository=action_repository,
                          company_repository=company_repository,
                          user_repository=user_repository)
+
+
+async def get_notification_service(session: AsyncSession = Depends(get_async_session)) -> NotificationService:
+    notification_repository = NotificationRepository(session)
+    company_repository = CompanyRepository(session)
+    user_repository = UserRepository(session)
+    return NotificationService(session=session,
+                               notification_repository=notification_repository,
+                               company_repository=company_repository,
+                               user_repository=user_repository)
