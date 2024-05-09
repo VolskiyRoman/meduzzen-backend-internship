@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Open project folder
         run: cd /home/ubuntu/meduzzen-backend-internship
+      - name: ls
+        run: ls -a
       - name: Stop and remove old containers
         run: sudo docker-compose down
       - name: Pull develop branch from remote
