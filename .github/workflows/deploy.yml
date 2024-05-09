@@ -8,21 +8,16 @@ on:
     types: [closed]
     branches:
       - develop
-jobs:
 
+jobs:
   deployment:
     runs-on: self-hosted
     steps:
-      - name: Open project folder and list directory contents
+      - name: Execute deployment steps
         run: |
-          cd /home/ubuntu/meduzzen-backend-internship && ls -a
-      - name: List Docker containers
-        run: sudo docker ps -a
-      - name: Stop and remove old containers
-        run: sudo docker-compose down
-      - name: Pull develop branch from remote
-        run: git pull origin develop
-      - name: Set branch to develop
-        run: git checkout develop
-      - name: Build and start new containers
-        run: sudo docker-compose up --build -d
+          cd /home/ubuntu/meduzzen-backend-internship &&
+          ls -a &&
+          sudo docker-compose down &&
+          git pull origin develop &&
+          git checkout develop &&
+          sudo docker-compose up --build -d
