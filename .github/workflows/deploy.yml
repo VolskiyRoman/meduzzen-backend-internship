@@ -13,11 +13,10 @@ jobs:
   deployment:
     runs-on: self-hosted
     steps:
-      - name: Open project folder
-        run: cd /home/ubuntu/meduzzen-backend-internship
-      - name: ls
-        run: ls -a
-      - name: qwe
+      - name: Open project folder and list directory contents
+        run: |
+          cd /home/ubuntu/meduzzen-backend-internship && ls -a
+      - name: List Docker containers
         run: sudo docker ps -a
       - name: Stop and remove old containers
         run: sudo docker-compose down
