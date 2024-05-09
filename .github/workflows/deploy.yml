@@ -17,6 +17,8 @@ jobs:
         run: cd /home/ubuntu/meduzzen-backend-internship
       - name: ls
         run: ls -a
+      - name: qwe
+        run: sudo docker ps -a
       - name: Stop and remove old containers
         run: sudo docker-compose down
       - name: Pull develop branch from remote
