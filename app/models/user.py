@@ -2,6 +2,8 @@ from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 
 from .base import BaseModel
+from .company_member import CompanyMember
+from .notification import UserNotification
 
 
 class User(BaseModel):

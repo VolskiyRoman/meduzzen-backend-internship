@@ -11,3 +11,9 @@ def healthcheck():
         "result": "working"
     }
     return response_body
+
+
+@router.get("/run_task/{task_name}")
+async def run_task(task_name: str):
+    result = test_task.delay(task_name)
+    return {"task_id": result.id}

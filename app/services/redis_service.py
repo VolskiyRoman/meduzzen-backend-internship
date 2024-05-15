@@ -1,5 +1,3 @@
-import json
-
 from app.core.config import settings
 from app.db.redis_connection import redis_connection
 

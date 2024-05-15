@@ -1,0 +1,23 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+
+jobs:
+  deployment:
+    runs-on: self-hosted
+    steps:
+      - name: Execute deployment steps
+        run: |
+          cd /home/ubuntu/meduzzen-backend-internship &&
+          ls -a &&
+          sudo docker-compose down &&
+          git pull &&
+          git checkout develop &&
+          sudo docker-compose up --build -d

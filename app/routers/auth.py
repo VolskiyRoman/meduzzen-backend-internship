@@ -16,7 +16,7 @@ async def login_jwt(login_data: SignInRequest, auth_service: AuthService = Depen
     return await auth_service.validate_auth_user(login_data.model_dump())
 
 
-@router.post("/signup/", response_model=TokenInfo)
+@router.post("/signup/", response_model=dict)
 async def create_user(user_create: SignUpRequest,
                       user_service: AuthService = Depends(get_auth_service)):
     return await user_service.create_user(user_create.model_dump())
